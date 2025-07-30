@@ -7,7 +7,6 @@ import * as ecc from "tiny-secp256k1";
 const ECPair = ECPairFactory(ecc);
 const network = bitcoin.networks.regtest; // Nigiri uses regtest
 
-// Generate a new random key pair
 const keyPair = ECPair.makeRandom({ network });
 const { address } = bitcoin.payments.p2wpkh({
   network,

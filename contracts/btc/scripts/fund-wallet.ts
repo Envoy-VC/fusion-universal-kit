@@ -1,11 +1,7 @@
-import { exec } from "child_process";
+import { exec } from "node:child_process";
 
 const fundWallet = () => {
-  // get arguments
   const address = process.argv[2];
-
-  // run in shell
-  // nilgiri faucet <address>
   console.log(`💰 Funding address ${address}...`);
 
   exec(`nigiri faucet ${address}`, (error, stdout, stderr) => {
