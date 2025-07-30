@@ -1,0 +1,20 @@
+{
+  "author": "",
+  "description": "",
+  "devDependencies": {
+    "bitcoinjs-lib": "^6.1.7",
+    "ecpair": "^3.0.0",
+    "tiny-secp256k1": "^2.2.4",
+    "tsx": "^4.20.3"
+  },
+  "keywords": [],
+  "license": "ISC",
+  "main": "index.js",
+  "name": "btc",
+  "scripts": {
+    "create-wallet": "tsx scripts/create-wallet.ts",
+    "fund-wallet": "tsx scripts/fund-wallet.ts"
+  },
+  "type": "module",
+  "version": "1.0.0"
+}
