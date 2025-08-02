@@ -5,7 +5,6 @@
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
 
-    "outDir": "dist",
     "target": "ES2022"
   },
   "display": "Node Package",

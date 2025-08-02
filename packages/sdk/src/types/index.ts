@@ -1,10 +1,7 @@
+import type { BtcWallet, HTLCResult } from "@repo/btc";
 import type { Hex } from "viem";
 
 export type ContractAddressMap = Record<number, Hex>;
-
-export type FusionKitCreateParams = {
-  escrowFactory: ContractAddressMap;
-};
 
 export type Network = { type: "evm"; chainId: number } | { type: "btc" };
 
@@ -50,3 +47,26 @@ export type FusionOrder = {
 
   status: "pending" | "fulfilled" | "cancelled" | "created" | "expired";
 };
+
+export interface CreateOrderArgs {
+  maker: {
+    sourceAddress: UniversalAddress;
+    destinationAddress: UniversalAddress;
+    provides: Asset;
+    wants: Asset;
+  };
+}
+
+export interface DeployEvmEscrowArgs {
+  order: FusionOrder;
+  taker: {
+    sourceAddress: UniversalAddress;
+    destinationAddress: UniversalAddress;
+  };
+}
+
+export interface FundBtcEscrowArgs {
+  htlcConfig: HTLCResult;
+  btcWallet: BtcWallet;
+  amountInSatoshis: number;
+}

@@ -2,19 +2,10 @@
 
 import * as bitcoin from "bitcoinjs-lib";
 
-import type { HTLCResult } from "@/types";
-
-interface CreateHTLCArgs {
-  senderPublicKey: Buffer;
-  receiverPublicKey: Buffer;
-  hashlock: Buffer;
-  locktime: number;
-  network: bitcoin.Network;
-}
+import type { CreateHTLCArgs, HTLCResult } from "@/types";
 
 export const createHTLC = (args: CreateHTLCArgs): HTLCResult => {
-  const { senderPublicKey, receiverPublicKey, hashlock, locktime, network } =
-    args;
+  const { senderPublicKey, receiverPublicKey, hashlock, locktime } = args;
   const redeemScript = bitcoin.script.compile([
     bitcoin.opcodes.OP_IF!,
     bitcoin.opcodes.OP_SHA256!,
@@ -37,7 +28,10 @@ export const createHTLC = (args: CreateHTLCArgs): HTLCResult => {
     bitcoin.opcodes.OP_0!,
     scriptHash,
   ]);
-  const address = bitcoin.address.fromOutputScript(lockingScript, network);
+  const address = bitcoin.address.fromOutputScript(
+    lockingScript,
+    bitcoin.networks.regtest,
+  );
 
   return {
     address,

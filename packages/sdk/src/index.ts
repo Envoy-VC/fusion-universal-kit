@@ -1,17 +1,36 @@
+import { type CreateHTLCArgs, createHTLC } from "@repo/btc";
 import type { Config } from "@wagmi/core";
+import type { Account } from "viem";
 
-import type { FusionKitCreateParams } from "./types";
+import * as actions from "./actions";
+import type {
+  CreateOrderArgs,
+  DeployEvmEscrowArgs,
+  FundBtcEscrowArgs,
+} from "./types";
 
 export class FusionUniversalKit {
   private config: Config;
-  private params: FusionKitCreateParams;
+  private account: Account | undefined;
 
-  constructor(config: Config, params: FusionKitCreateParams) {
+  constructor(config: Config, account?: Account) {
     this.config = config;
-    this.params = params;
+    this.account = account;
   }
 
-  getEscrowFactoryAddress(chainId: number) {
-    return this.params.escrowFactory[chainId];
+  createOrder(args: CreateOrderArgs) {
+    return actions.createOrder(args);
+  }
+
+  createHTLC(args: CreateHTLCArgs) {
+    return createHTLC(args);
+  }
+
+  async deployEvmEscrow(args: DeployEvmEscrowArgs) {
+    return await actions.deployEvmEscrow(this.config, args, this.account);
+  }
+
+  async fundBtcEscrow(args: FundBtcEscrowArgs) {
+    return await actions.fundBtcEscrow(args);
   }
 }

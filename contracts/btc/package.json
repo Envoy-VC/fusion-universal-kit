@@ -1,9 +1,12 @@
 {
+  "dependencies": {
+    "tsup": "^8.3.5"
+  },
   "devDependencies": {
     "@biomejs/biome": "^2.0.5",
     "@repo/config": "workspace:*",
     "@types/node": "22",
-    "bitcoinjs-lib": "^6.1.7",
+    "bitcoinjs-lib": "6.1.3",
     "ecpair": "2.1.0",
     "tiny-secp256k1": "^2.2.4",
     "tsx": "^4.20.3",
@@ -11,15 +14,16 @@
   },
   "keywords": [],
   "license": "ISC",
-  "main": "src/index.ts",
+  "main": "./src/index.ts",
   "name": "@repo/btc",
   "scripts": {
-    "create-wallet": "tsx scripts/create-wallet.ts",
+    "build": "tsup",
+    "dev": "vitest",
     "format": "pnpm exec biome format",
     "format:write": "pnpm exec biome format --write",
-    "fund-wallet": "tsx scripts/fund-wallet.ts",
     "lint": "pnpm exec biome lint && pnpm exec biome check",
-    "lint:write": "pnpm exec biome lint --write && pnpm exec biome check --write"
+    "lint:write": "pnpm exec biome lint --write && pnpm exec biome check --write",
+    "test": "vitest run"
   },
   "type": "module",
   "version": "1.0.0"

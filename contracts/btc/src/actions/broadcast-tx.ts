@@ -22,10 +22,12 @@ export const broadcastTransaction = async (txHex: string): Promise<string> => {
     method: "POST",
   });
 
-  const responseData = await response.json();
+  const responseData = (await response.json()) as
+    | { result: string }
+    | { error: string };
 
   // Check for an error in the JSON-RPC response
-  if (responseData.error) {
+  if ("error" in responseData) {
     throw new Error(`Broadcast failed: ${JSON.stringify(responseData.error)}`);
   }
 

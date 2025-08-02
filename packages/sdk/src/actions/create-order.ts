@@ -4,16 +4,7 @@ import { type Hex, toHex } from "viem";
 
 import { getCurrentTimestamp } from "@/helpers";
 
-import type { Asset, FusionOrder, UniversalAddress } from "../types";
-
-interface CreateOrderArgs {
-  maker: {
-    sourceAddress: UniversalAddress;
-    destinationAddress: UniversalAddress;
-    provides: Asset;
-    wants: Asset;
-  };
-}
+import type { CreateOrderArgs, FusionOrder } from "../types";
 
 export const createOrder = (args: CreateOrderArgs) => {
   const secret = toHex(crypto.randomBytes(32));

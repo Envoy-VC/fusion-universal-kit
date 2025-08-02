@@ -13,3 +13,10 @@ export type BtcWallet = {
   account: bitcoin.payments.Payment;
   keyPair: ECPairInterface;
 };
+
+export interface CreateHTLCArgs {
+  senderPublicKey: Buffer;
+  receiverPublicKey: Buffer;
+  hashlock: Buffer;
+  locktime: number;
+}

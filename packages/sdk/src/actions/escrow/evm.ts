@@ -3,7 +3,13 @@ import {
   getBalance,
   waitForTransactionReceipt,
 } from "@wagmi/core";
-import { type Hex, keccak256, parseEther, zeroAddress } from "viem";
+import {
+  type Account,
+  type Hex,
+  keccak256,
+  parseEther,
+  zeroAddress,
+} from "viem";
 
 import {
   readEscrowFactoryAddressOfEscrowSrc,
@@ -11,16 +17,14 @@ import {
   writeEscrowFactoryCreateSrcEscrow,
 } from "@/generated/wagmi";
 import { getCurrentTimestamp, toUniversalAddress } from "@/helpers";
-import type { FusionOrder, UniversalAddress } from "@/types";
+import type { DeployEvmEscrowArgs } from "@/types";
 
 export const deployEvmEscrow = async (
   wagmiConfig: Config,
-  order: FusionOrder,
-  taker: {
-    sourceAddress: UniversalAddress;
-    destinationAddress: UniversalAddress;
-  },
+  escrowArgs: DeployEvmEscrowArgs,
+  account?: Account,
 ) => {
+  const { order, taker } = escrowArgs;
   const client = wagmiConfig.getClient();
 
   if (order.network.type !== "evm") {
@@ -30,7 +34,7 @@ export const deployEvmEscrow = async (
     throw new Error("Invalid chainId");
   }
 
-  if (order.maker.sourceAddress.data !== client.account?.address) {
+  if (order.maker.sourceAddress.data !== account?.address) {
     throw new Error("Source Address does not match order maker");
   }
 
@@ -92,6 +96,7 @@ export const deployEvmEscrow = async (
   }
 
   const hash = await writeEscrowFactoryCreateSrcEscrow(wagmiConfig, {
+    account,
     args: [immutables],
     value: totalAmount,
   });

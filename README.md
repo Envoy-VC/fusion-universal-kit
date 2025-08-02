@@ -45,6 +45,6 @@ The starter kit uses `next-starter` and `shadcn-ui-monorepo` you will have a ful
 1. Maker creates Order (Off chain order creation) ✅
 2. Taker create a HTLC (off chain compute) ✅
 3. Maker deploys Escrow Contract (on chain) ✅
-4. Taker Funds the htlc (on chain)
+4. Taker Funds the htlc (on chain) ✅
 5. Maker reveals secret and claims btc from htlc
 6. Taker sees the revealed secret and claims the eth from Escrow

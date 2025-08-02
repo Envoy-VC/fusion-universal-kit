@@ -1,14 +1,8 @@
-import type { BtcWallet, HTLCResult } from "@repo/btc";
-import { getUTXOs } from "@repo/btc";
+import type { HTLCResult } from "@repo/btc";
+import { broadcastTransaction, getUTXOs } from "@repo/btc";
 import * as bitcoin from "bitcoinjs-lib";
 
-import { broadcastTransaction } from "../../../../../contracts/btc/src/actions/broadcast-tx";
-
-interface FundBtcEscrowArgs {
-  htlcConfig: HTLCResult;
-  btcWallet: BtcWallet;
-  amountInSatoshis: number;
-}
+import type { FundBtcEscrowArgs } from "@/types";
 
 export const fundBtcEscrow = async (args: FundBtcEscrowArgs) => {
   if (!args.btcWallet.account.address) {
@@ -89,3 +83,18 @@ export const fundBtcEscrow = async (args: FundBtcEscrowArgs) => {
     txId: broadcastTxId,
   };
 };
+
+type ClaimBtcEscrowArgs = {
+  htlcResult: HTLCResult;
+};
+
+// 'btc/scripts/create-htlc.ts',
+// 'claim',
+// htlcFile,
+// fundingTxId,
+// '0', // vout
+// secret,
+// makerBitcoinAddress,
+// bitcoinPrivateKey,
+// '10' // fee rate
+// export const claimBtcEscrow = async (args: ClaimBtcEscrowArgs) => {};
