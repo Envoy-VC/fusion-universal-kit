@@ -8,6 +8,7 @@ export class FusionUniversalKit {
 
   constructor(config: Config, params: FusionKitCreateParams) {
     this.config = config;
+    this.params = params;
   }
 
   getEscrowFactoryAddress(chainId: number) {
