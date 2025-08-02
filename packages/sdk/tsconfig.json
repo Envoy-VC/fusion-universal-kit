@@ -4,7 +4,8 @@
     "baseUrl": ".",
     "declaration": true,
     "declarationMap": true,
-    "paths": { "@/*": ["./src/*"] }
+    "paths": { "@/*": ["./src/*"] },
+    "resolveJsonModule": true
   },
   "exclude": ["node_modules", "dist"],
   "extends": "@repo/config/tsconfig/library/node",

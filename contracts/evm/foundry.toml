@@ -50,3 +50,6 @@ auto_format = true
 [dependencies]
 forge-std = "1.9.7"
 "@openzeppelin-contracts" = "5.4.0"
+
+
+extra_output = ["metadata", "abi"]

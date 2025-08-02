@@ -7,6 +7,7 @@
     "@biomejs/biome": "^2.0.5",
     "@repo/config": "workspace:*",
     "@types/node": "22",
+    "@wagmi/cli": "^2.3.2",
     "tsup": "^8.3.5",
     "typescript": "^5.7.3",
     "vitest": "^3.0.4"
