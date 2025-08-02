@@ -2,14 +2,14 @@
 
 pragma solidity ^0.8.23;
 
-import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import { AddressLib, Address } from "./libraries/AddressLib.sol";
-import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {AddressLib, Address, UniversalAddress} from "./libraries/AddressLib.sol";
+import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
-import { ImmutablesLib } from "./libraries/ImmutablesLib.sol";
-import { Timelocks, TimelocksLib } from "./libraries/TimelocksLib.sol";
+import {ImmutablesLib} from "./libraries/ImmutablesLib.sol";
+import {Timelocks, TimelocksLib} from "./libraries/TimelocksLib.sol";
 
-import { IBaseEscrow } from "./interfaces/IBaseEscrow.sol";
+import {IBaseEscrow} from "./interfaces/IBaseEscrow.sol";
 
 /**
  * @title Base abstract Escrow contract for cross-chain atomic swap.
@@ -17,7 +17,7 @@ import { IBaseEscrow } from "./interfaces/IBaseEscrow.sol";
  * @custom:security-contact security@1inch.io
  */
 abstract contract BaseEscrow is IBaseEscrow {
-    using AddressLib for Address;
+    using AddressLib for UniversalAddress;
     using SafeERC20 for IERC20;
     using TimelocksLib for Timelocks;
     using ImmutablesLib for Immutables;
@@ -28,20 +28,21 @@ abstract contract BaseEscrow is IBaseEscrow {
     /// @notice See {IBaseEscrow-RESCUE_DELAY}.
     uint256 public immutable RESCUE_DELAY;
     /// @notice See {IBaseEscrow-FACTORY}.
-    address public immutable FACTORY = msg.sender;
+    address public immutable FACTORY;
 
     constructor(uint32 rescueDelay, IERC20 accessToken) {
         RESCUE_DELAY = rescueDelay;
         _ACCESS_TOKEN = accessToken;
+        FACTORY = msg.sender;
     }
 
     modifier onlyTaker(Immutables calldata immutables) {
-        if (msg.sender != immutables.taker.get()) revert InvalidCaller();
+        if (msg.sender != immutables.taker.source.toEthAddress()) revert InvalidCaller();
         _;
     }
 
     modifier onlyMaker(Immutables calldata immutables) {
-        if (msg.sender != immutables.maker.get()) revert InvalidCaller();
+        if (msg.sender != immutables.maker.source.toEthAddress()) revert InvalidCaller();
         _;
     }
 
@@ -98,7 +99,7 @@ abstract contract BaseEscrow is IBaseEscrow {
      * @dev Transfers native tokens to the recipient.
      */
     function _ethTransfer(address to, uint256 amount) internal {
-        (bool success,) = to.call{ value: amount }("");
+        (bool success,) = to.call{value: amount}("");
         if (!success) revert NativeTokenSendingFailure();
     }
 

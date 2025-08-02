@@ -2,19 +2,37 @@
 
 pragma solidity ^0.8.23;
 
-/**
- * @title Address type for 1inch contracts
- * @notice Utility library for Address type operations  
- */
+enum ChainType {
+    EVM,
+    BITCOIN
+}
 
-type Address is uint256;
+struct UniversalAddress {
+    ChainType chain;
+    bytes data;
+}
+
+struct Address {
+    UniversalAddress source;
+    UniversalAddress destination;
+}
 
 library AddressLib {
-    function get(Address addr) internal pure returns (address) {
-        return address(uint160(Address.unwrap(addr)));
+    function toEthAddress(UniversalAddress memory addr) internal pure returns (address ethAddr) {
+        require(addr.chain == ChainType.EVM, "AddressLib: Invalid chain type");
+        require(addr.data.length == 20, "AddressLib: Invalid address length");
+        bytes memory _bytes = addr.data;
+        assembly {
+            ethAddr := mload(add(_bytes, 20))
+        }
     }
 
-    function wrap(address addr) internal pure returns (Address) {
-        return Address.wrap(uint256(uint160(addr)));
+    function fromEthAddress(address ethAddr) internal pure returns (UniversalAddress memory addr) {
+        bytes memory _bytes = abi.encodePacked(ethAddr);
+        assembly {
+            mstore(add(_bytes, 20), ethAddr)
+        }
+        addr.chain = ChainType.EVM;
+        addr.data = _bytes;
     }
-} 
+}

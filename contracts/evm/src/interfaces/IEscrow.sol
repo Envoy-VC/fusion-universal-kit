@@ -2,7 +2,7 @@
 
 pragma solidity ^0.8.0;
 
-import { IBaseEscrow } from "./IBaseEscrow.sol";
+import {IBaseEscrow} from "./IBaseEscrow.sol";
 
 /**
  * @title Escrow interface for cross-chain atomic swap.
@@ -11,5 +11,5 @@ import { IBaseEscrow } from "./IBaseEscrow.sol";
  */
 interface IEscrow is IBaseEscrow {
     /// @notice Returns the bytecode hash of the proxy contract.
-    function PROXY_BYTECODE_HASH() external view returns (bytes32); // solhint-disable-line func-name-mixedcase
+    function PROXY_BYTECODE_HASH() external view returns (bytes32);
 }

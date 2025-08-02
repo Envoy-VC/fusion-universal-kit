@@ -10,9 +10,9 @@ import {IBaseEscrow} from "./interfaces/IBaseEscrow.sol";
 import {BaseEscrow} from "./BaseEscrow.sol";
 import {Escrow} from "./Escrow.sol";
 
-contract EscrowDst is Escrow {
-    using AddressLib for UniversalAddress;
+contract EscrowSrc is Escrow {
     using SafeERC20 for IERC20;
+    using AddressLib for UniversalAddress;
     using TimelocksLib for Timelocks;
 
     constructor(uint32 rescueDelay, IERC20 accessToken) BaseEscrow(rescueDelay, accessToken) {}
@@ -21,8 +21,8 @@ contract EscrowDst is Escrow {
     receive() external payable {}
 
     /**
-     * @notice Private withdrawal by maker using secret
-     * @dev Maker reveals secret to claim EVM tokens after providing Bitcoin
+     * @notice Private withdrawal by taker using secret
+     * @dev Taker reveals secret to claim EVM tokens after providing Bitcoin to maker
      * @param secret The secret that matches the hashlock
      * @param immutables The escrow immutables
      */
@@ -62,21 +62,21 @@ contract EscrowDst is Escrow {
     }
 
     /**
-     * @notice Cancels escrow and returns funds to taker
+     * @notice Cancels escrow and returns funds to maker
      * @dev Can only be called after cancellation period starts
      * @param immutables The escrow immutables
      */
     function cancel(Immutables calldata immutables)
         external
         override
-        onlyTaker(immutables)
+        onlyMaker(immutables)
         onlyValidImmutables(immutables)
         onlyAfter(immutables.timelocks.get(TimelocksLib.Stage.DstCancellation))
     {
-        // Return tokens to taker
-        _uniTransfer(immutables.token, immutables.taker.source.toEthAddress(), immutables.amount);
-        // Return safety deposit to taker
-        _ethTransfer(immutables.taker.source.toEthAddress(), immutables.safetyDeposit);
+        // Return tokens to maker
+        _uniTransfer(immutables.token, immutables.maker.source.toEthAddress(), immutables.amount);
+        // Return safety deposit to maker
+        _ethTransfer(immutables.maker.source.toEthAddress(), immutables.safetyDeposit);
 
         emit EscrowCancelled();
     }
@@ -87,11 +87,11 @@ contract EscrowDst is Escrow {
      * @param immutables The escrow immutables
      */
     function _withdraw(bytes32 secret, Immutables calldata immutables) internal {
-        // Transfer tokens to maker
-        _uniTransfer(immutables.token, immutables.maker.source.toEthAddress(), immutables.amount);
+        // Transfer tokens to taker
+        _uniTransfer(immutables.token, immutables.taker.source.toEthAddress(), immutables.amount);
 
-        // Return safety deposit to taker
-        _ethTransfer(immutables.taker.source.toEthAddress(), immutables.safetyDeposit);
+        // Return safety deposit to maker
+        _ethTransfer(immutables.maker.source.toEthAddress(), immutables.safetyDeposit);
 
         emit EscrowWithdrawal(secret);
     }

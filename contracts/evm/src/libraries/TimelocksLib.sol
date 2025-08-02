@@ -3,18 +3,26 @@
 pragma solidity ^0.8.20;
 
 /**
- * @dev Timelocks for the destination chain plus the deployment timestamp.
+ * @dev Timelocks for the source and the destination chains plus the deployment timestamp.
  * Timelocks store the number of seconds from the time the contract is deployed to the start of a specific period.
- * For illustrative purposes, it is possible to describe timelocks by the structure:
+ * For illustrative purposes, it is possible to describe timelocks by two structures:
+ * struct SrcTimelocks {
+ *     uint256 withdrawal;
+ *     uint256 publicWithdrawal;
+ *     uint256 cancellation;
+ *     uint256 publicCancellation;
+ * }
+ *
  * struct DstTimelocks {
  *     uint256 withdrawal;
  *     uint256 publicWithdrawal;
  *     uint256 cancellation;
  * }
  *
- * withdrawal: Period when only the taker with a secret can withdraw tokens for maker (destination chain).
- * publicWithdrawal: Period when anyone with a secret can withdraw tokens for maker (destination chain).
+ * withdrawal: Period when only the taker with a secret can withdraw tokens for taker (source chain) or maker (destination chain).
+ * publicWithdrawal: Period when anyone with a secret can withdraw tokens for taker (source chain) or maker (destination chain).
  * cancellation: Period when escrow can only be cancelled by the taker.
+ * publicCancellation: Period when escrow can be cancelled by anyone.
  *
  * @custom:security-contact security@1inch.io
  */
@@ -25,6 +33,10 @@ type Timelocks is uint256;
  */
 library TimelocksLib {
     enum Stage {
+        SrcWithdrawal,
+        SrcPublicWithdrawal,
+        SrcCancellation,
+        SrcPublicCancellation,
         DstWithdrawal,
         DstPublicWithdrawal,
         DstCancellation
@@ -40,7 +52,8 @@ library TimelocksLib {
      * @return The timelocks with the deployment timestamp set.
      */
     function setDeployedAt(Timelocks timelocks, uint256 value) internal pure returns (Timelocks) {
-        return Timelocks.wrap((Timelocks.unwrap(timelocks) & ~uint256(_DEPLOYED_AT_MASK)) | value << _DEPLOYED_AT_OFFSET);
+        return
+            Timelocks.wrap((Timelocks.unwrap(timelocks) & ~uint256(_DEPLOYED_AT_MASK)) | value << _DEPLOYED_AT_OFFSET);
     }
 
     /**

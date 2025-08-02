@@ -1,45 +1,47 @@
 // SPDX-License-Identifier: MIT
-
 pragma solidity ^0.8.0;
 
-import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import { Create2 } from "@openzeppelin/contracts/utils/Create2.sol";
-import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {Create2} from "@openzeppelin/contracts/utils/Create2.sol";
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
-import { AddressLib, Address } from "./libraries/AddressLib.sol";
-import { ImmutablesLib } from "./libraries/ImmutablesLib.sol";
-import { TimelocksLib, Timelocks } from "./libraries/TimelocksLib.sol";
-import { ProxyHashLib } from "./libraries/ProxyHashLib.sol";
+import {AddressLib, UniversalAddress} from "./libraries/AddressLib.sol";
+import {ImmutablesLib} from "./libraries/ImmutablesLib.sol";
+import {TimelocksLib, Timelocks} from "./libraries/TimelocksLib.sol";
+import {ProxyHashLib} from "./libraries/ProxyHashLib.sol";
 
-import { IBaseEscrow } from "./interfaces/IBaseEscrow.sol";
-import { IEscrowFactory } from "./interfaces/IEscrowFactory.sol";
-import { EscrowDst } from "./EscrowDst.sol";
+import {IBaseEscrow} from "./interfaces/IBaseEscrow.sol";
+import {IEscrowFactory} from "./interfaces/IEscrowFactory.sol";
 
-/**
- * @title Escrow Factory contract for TON-EVM atomic swaps
- * @notice Contract to create destination escrow contracts for cross-chain atomic swap.
- * @dev Simplified factory focused on destination escrows only, designed for TON-EVM swaps
- * @custom:security-contact security@1inch.io
- */
+// Implementations
+import {EscrowDst} from "./EscrowDst.sol";
+import {EscrowSrc} from "./EscrowSrc.sol";
+
 contract EscrowFactory is IEscrowFactory, Ownable {
     using SafeERC20 for IERC20;
-    using AddressLib for Address;
+    using AddressLib for UniversalAddress;
     using TimelocksLib for Timelocks;
+
+    /// @notice Implementation contract for source escrows
+    address public immutable ESCROW_SRC_IMPLEMENTATION;
 
     /// @notice Implementation contract for destination escrows
     address public immutable ESCROW_DST_IMPLEMENTATION;
-    
-    /// @notice Bytecode hash for destination proxy contracts  
+
+    /// @notice Proxy bytecode hash for source escrows
+    bytes32 private immutable _PROXY_SRC_BYTECODE_HASH;
+
+    /// @notice Proxy bytecode hash for destination escrows
     bytes32 private immutable _PROXY_DST_BYTECODE_HASH;
 
-    /// @notice Access token required for public operations
+    /// @notice Access token for public operations
     IERC20 public immutable ACCESS_TOKEN;
 
-    /// @notice Fee for creating destination escrows (in wei)
+    /// @notice Creation fee in ETH
     uint256 public creationFee;
 
-    /// @notice Treasury address for collecting fees
+    /// @notice Treasury address for fee collection
     address public treasury;
 
     error InvalidFeeAmount();
@@ -51,6 +53,7 @@ contract EscrowFactory is IEscrowFactory, Ownable {
     constructor(
         IERC20 accessToken,
         address owner,
+        uint32 rescueDelaySrc,
         uint32 rescueDelayDst,
         uint256 _creationFee,
         address _treasury
@@ -58,106 +61,104 @@ contract EscrowFactory is IEscrowFactory, Ownable {
         ACCESS_TOKEN = accessToken;
         creationFee = _creationFee;
         treasury = _treasury;
-        
-        // Deploy destination escrow implementation
+
+        // Deploy implementations
+        ESCROW_SRC_IMPLEMENTATION = address(new EscrowSrc(rescueDelaySrc, accessToken));
         ESCROW_DST_IMPLEMENTATION = address(new EscrowDst(rescueDelayDst, accessToken));
-        
-        // Compute proxy bytecode hash for destination escrows
+
+        // Compute proxy bytecode hashes
+        _PROXY_SRC_BYTECODE_HASH = ProxyHashLib.computeProxyBytecodeHash(ESCROW_SRC_IMPLEMENTATION);
         _PROXY_DST_BYTECODE_HASH = ProxyHashLib.computeProxyBytecodeHash(ESCROW_DST_IMPLEMENTATION);
     }
 
-    // Allow factory to receive ETH
-    receive() external payable {}
-
     /**
-     * @notice Creates a new destination escrow contract for TON-EVM atomic swap
-     * @dev The caller must send the safety deposit + creation fee in ETH, and approve tokens if needed
-     * @param dstImmutables The immutables of the escrow contract that are used in deployment
+     * @notice Creates source escrow for EVM→BTC swaps
+     * @param immutables Escrow immutables including Bitcoin details
      */
-    function createDstEscrow(IBaseEscrow.Immutables calldata dstImmutables) external payable override {
-        address token = dstImmutables.token.get();
-        
+    function createSrcEscrow(IBaseEscrow.Immutables calldata immutables) external payable override {
+        // Note: Bitcoin validation handled at application level
+
+        address token = immutables.token;
+
         // Calculate required ETH
-        uint256 requiredForEscrow = token == address(0) 
-            ? dstImmutables.amount + dstImmutables.safetyDeposit  // ETH swap: amount + safety deposit
-            : dstImmutables.safetyDeposit;                       // Token swap: only safety deposit
-            
+        uint256 requiredForEscrow =
+            token == address(0) ? immutables.amount + immutables.safetyDeposit : immutables.safetyDeposit;
+
         uint256 totalRequired = requiredForEscrow + creationFee;
-        
+
         if (msg.value != totalRequired) {
             revert InsufficientEscrowBalance();
         }
 
-        // Set deployment timestamp in immutables
-        IBaseEscrow.Immutables memory immutables = dstImmutables;
-        immutables.timelocks = immutables.timelocks.setDeployedAt(block.timestamp);
+        // Deploy escrow
+        address escrow = _deployEscrow(immutables, _PROXY_SRC_BYTECODE_HASH, requiredForEscrow);
 
-        // Compute salt and deploy escrow with Create2
-        bytes32 salt = ImmutablesLib.hashMem(immutables);
-        
-        // Create minimal proxy bytecode
-        bytes memory bytecode = abi.encodePacked(
-            hex"3d602d80600a3d3981f3363d3d373d3d3d363d73",
-            ESCROW_DST_IMPLEMENTATION,
-            hex"5af43d82803e903d91602b57fd5bf3"
-        );
-
-        // Deploy escrow with required ETH
-        address escrow = Create2.deploy(requiredForEscrow, salt, bytecode);
-
-        // For ERC20 swaps, transfer tokens to the escrow
+        // Transfer ERC20 tokens if needed
         if (token != address(0)) {
-            IERC20(token).safeTransferFrom(msg.sender, escrow, dstImmutables.amount);
+            IERC20(token).safeTransferFrom(msg.sender, escrow, immutables.amount);
         }
 
-        // Transfer creation fee to treasury
-        if (creationFee > 0 && treasury != address(0)) {
-            (bool success, ) = treasury.call{value: creationFee}("");
-            if (!success) revert FeeTransferFailed();
-        }
+        _collectFee();
 
-        // Detect creator type for enhanced analytics
-        uint8 creatorType = _detectCreatorType(msg.sender, dstImmutables);
-
-        emit DstEscrowCreated(escrow, dstImmutables.hashlock, dstImmutables.taker, msg.sender, creatorType);
+        emit SrcEscrowCreated(escrow, immutables.hashlock, immutables.maker, msg.sender);
     }
 
     /**
-     * @notice Helper function to detect creator type for analytics
-     * @param creator The address creating the escrow
-     * @param immutables The escrow immutables
-     * @return creatorType 0=Resolver, 1=Maker, 2=Taker, 3=Other
+     * @notice Creates destination escrow for BTC→EVM swaps
+     * @param immutables Escrow immutables including Bitcoin details
      */
-    function _detectCreatorType(address creator, IBaseEscrow.Immutables calldata immutables) 
-        private 
-        view 
-        returns (uint8) 
-    {
-        address maker = immutables.maker.get();
-        address taker = immutables.taker.get();
-        
-        if (creator == maker) return 1;        // Maker
-        if (creator == taker) return 2;        // Taker  
-        if (ACCESS_TOKEN.balanceOf(creator) > 0) return 0; // Resolver (has access tokens)
-        return 3;                              // Other
+    function createDstEscrow(IBaseEscrow.Immutables calldata immutables) external payable override {
+        // Note: Bitcoin validation handled at application level
+
+        address token = immutables.token;
+
+        // Calculate required ETH
+        uint256 requiredForEscrow =
+            token == address(0) ? immutables.amount + immutables.safetyDeposit : immutables.safetyDeposit;
+
+        uint256 totalRequired = requiredForEscrow + creationFee;
+
+        if (msg.value != totalRequired) {
+            revert InsufficientEscrowBalance();
+        }
+
+        // Deploy escrow
+        address escrow = _deployEscrow(immutables, _PROXY_DST_BYTECODE_HASH, requiredForEscrow);
+
+        // Transfer ERC20 tokens if needed
+        if (token != address(0)) {
+            IERC20(token).safeTransferFrom(msg.sender, escrow, immutables.amount);
+        }
+
+        _collectFee();
+
+        emit DstEscrowCreated(escrow, immutables.hashlock, immutables.taker, msg.sender);
     }
 
     /**
-     * @notice Returns the deterministic address of the destination escrow
-     * @param immutables The immutable arguments used to compute salt for escrow deployment
-     * @return The computed address of the escrow
+     * @notice Returns address of source escrow
      */
-    function addressOfEscrowDst(IBaseEscrow.Immutables calldata immutables) external view override returns (address) {
-        // Use current block timestamp for address prediction
+    function addressOfEscrowSrc(IBaseEscrow.Immutables calldata immutables) external view override returns (address) {
         IBaseEscrow.Immutables memory modifiedImmutables = immutables;
         modifiedImmutables.timelocks = immutables.timelocks.setDeployedAt(block.timestamp);
-        
+
+        bytes32 salt = ImmutablesLib.hashMem(modifiedImmutables);
+        return Create2.computeAddress(salt, _PROXY_SRC_BYTECODE_HASH, address(this));
+    }
+
+    /**
+     * @notice Returns address of destination escrow
+     */
+    function addressOfEscrowDst(IBaseEscrow.Immutables calldata immutables) external view override returns (address) {
+        IBaseEscrow.Immutables memory modifiedImmutables = immutables;
+        modifiedImmutables.timelocks = immutables.timelocks.setDeployedAt(block.timestamp);
+
         bytes32 salt = ImmutablesLib.hashMem(modifiedImmutables);
         return Create2.computeAddress(salt, _PROXY_DST_BYTECODE_HASH, address(this));
     }
 
     /**
-     * @notice Updates the creation fee (only owner)
+     * @notice Updates creation fee (only owner)
      * @param newFee New creation fee in wei
      */
     function setCreationFee(uint256 newFee) external onlyOwner {
@@ -167,7 +168,7 @@ contract EscrowFactory is IEscrowFactory, Ownable {
     }
 
     /**
-     * @notice Updates the treasury address (only owner)
+     * @notice Updates treasury address (only owner)
      * @param newTreasury New treasury address
      */
     function setTreasury(address newTreasury) external onlyOwner {
@@ -177,25 +178,37 @@ contract EscrowFactory is IEscrowFactory, Ownable {
     }
 
     /**
-     * @notice Emergency withdrawal function (only owner)
-     * @param token Token address (address(0) for ETH)
-     * @param amount Amount to withdraw
-     * @param to Recipient address
+     * @dev Deploys escrow using Create2
      */
-    function emergencyWithdraw(address token, uint256 amount, address to) external onlyOwner {
-        if (token == address(0)) {
-            (bool success, ) = to.call{value: amount}("");
-            if (!success) revert FeeTransferFailed();
-        } else {
-            IERC20(token).safeTransfer(to, amount);
-        }
+    function _deployEscrow(IBaseEscrow.Immutables calldata immutables, bytes32 proxyBytecodeHash, uint256 ethAmount)
+        internal
+        returns (address)
+    {
+        // Set deployment timestamp
+        IBaseEscrow.Immutables memory modifiedImmutables = immutables;
+        modifiedImmutables.timelocks = immutables.timelocks.setDeployedAt(block.timestamp);
+
+        // Compute salt and deploy escrow with Create2
+        bytes32 salt = ImmutablesLib.hashMem(modifiedImmutables);
+
+        // Create minimal proxy bytecode
+        bytes memory bytecode = abi.encodePacked(
+            hex"3d602d80600a3d3981f3363d3d373d3d3d363d73",
+            proxyBytecodeHash == _PROXY_SRC_BYTECODE_HASH ? ESCROW_SRC_IMPLEMENTATION : ESCROW_DST_IMPLEMENTATION,
+            hex"5af43d82803e903d91602b57fd5bf3"
+        );
+
+        // Deploy escrow with required ETH
+        return Create2.deploy(ethAmount, salt, bytecode);
     }
 
     /**
-     * @notice Returns the proxy bytecode hash for destination escrows
-     * @return The bytecode hash used for Create2 address computation
+     * @dev Collects creation fee
      */
-    function getProxyDstBytecodeHash() external view returns (bytes32) {
-        return _PROXY_DST_BYTECODE_HASH;
+    function _collectFee() internal {
+        if (creationFee > 0 && treasury != address(0)) {
+            (bool success,) = treasury.call{value: creationFee}("");
+            if (!success) revert FeeTransferFailed();
+        }
     }
-} 
+}

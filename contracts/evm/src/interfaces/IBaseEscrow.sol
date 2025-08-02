@@ -2,9 +2,9 @@
 
 pragma solidity ^0.8.0;
 
-import { Address } from "../libraries/AddressLib.sol";
+import {Address} from "../libraries/AddressLib.sol";
 
-import { Timelocks } from "../libraries/TimelocksLib.sol";
+import {Timelocks} from "../libraries/TimelocksLib.sol";
 
 /**
  * @title Base Escrow interface for cross-chain atomic swap.
@@ -14,10 +14,10 @@ import { Timelocks } from "../libraries/TimelocksLib.sol";
 interface IBaseEscrow {
     struct Immutables {
         bytes32 orderHash;
-        bytes32 hashlock;  // Hash of the secret.
+        bytes32 hashlock;
         Address maker;
         Address taker;
-        Address token;
+        address token;
         uint256 amount;
         uint256 safetyDeposit;
         Timelocks timelocks;
