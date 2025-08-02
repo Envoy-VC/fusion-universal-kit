@@ -1,8 +1,10 @@
-import type { HTLCResult } from "@repo/btc";
+import type { CreateClaimTxArgs } from "@repo/btc";
 import { broadcastTransaction, getUTXOs } from "@repo/btc";
 import * as bitcoin from "bitcoinjs-lib";
 
 import type { FundBtcEscrowArgs } from "@/types";
+
+import { createClaimTransaction } from "../../../../../contracts/btc/src/actions/create-claim-tx";
 
 export const fundBtcEscrow = async (args: FundBtcEscrowArgs) => {
   if (!args.btcWallet.account.address) {
@@ -84,17 +86,7 @@ export const fundBtcEscrow = async (args: FundBtcEscrowArgs) => {
   };
 };
 
-type ClaimBtcEscrowArgs = {
-  htlcResult: HTLCResult;
+export const claimBtcEscrow = async (args: CreateClaimTxArgs) => {
+  const claimTx = createClaimTransaction(args);
+  return await broadcastTransaction(claimTx.hex);
 };
-
-// 'btc/scripts/create-htlc.ts',
-// 'claim',
-// htlcFile,
-// fundingTxId,
-// '0', // vout
-// secret,
-// makerBitcoinAddress,
-// bitcoinPrivateKey,
-// '10' // fee rate
-// export const claimBtcEscrow = async (args: ClaimBtcEscrowArgs) => {};

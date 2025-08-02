@@ -1,7 +1,14 @@
-import { accountFromPrivateKey } from "@repo/btc";
-import { createConfig } from "@wagmi/core";
+import { accountFromPrivateKey, getBtcBalance } from "@repo/btc";
+import { createConfig, getBalance } from "@wagmi/core";
 import { anvil } from "@wagmi/core/chains";
-import { hexToBytes, http, parseEther, parseUnits, toHex } from "viem";
+import {
+  formatUnits,
+  hexToBytes,
+  http,
+  parseEther,
+  parseUnits,
+  toHex,
+} from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 
 import { getCurrentTimestamp } from "@/helpers";
@@ -18,10 +25,10 @@ const taker = privateKeyToAccount(
 );
 
 const makerBtc = accountFromPrivateKey(
-  "23f0a64d6c7aaef0e77f5b5d4cbe3c4f53fab7e72e5bb4846973976485df1b58",
+  "f9545a0d23184ffafa67b66b6f266da92c7d288d1e910ab6891339198da5c658",
 );
 const takerBtc = accountFromPrivateKey(
-  "aba30087566cc7da6865abc4ba82348cc53ac80bbb9a038a630e1f7fcea2533e",
+  "29d3d7803fe083712b98fc7c21c718c49ddf6f9a8d29f5bc20c1257a5438e461",
 );
 
 const config = createConfig({
@@ -31,8 +38,35 @@ const config = createConfig({
   },
 });
 
+const logBalances = async () => {
+  const makerBtcBalance = await getBtcBalance(makerBtc.account.address ?? "");
+  const takerBtcBalance = await getBtcBalance(takerBtc.account.address ?? "");
+  const makerEthBalance = await getBalance(config, {
+    address: maker.address,
+  });
+  const takerEthBalance = await getBalance(config, {
+    address: taker.address,
+  });
+
+  console.log("============== Balances ==============\n");
+  console.log("Maker BTC Balance:", formatUnits(makerBtcBalance, 8));
+  console.log("Maker ETH Balance:", formatUnits(makerEthBalance.value, 18));
+  console.log("\n");
+  console.log("Taker BTC Balance:", formatUnits(takerBtcBalance, 8));
+  console.log("Taker ETH Balance:", formatUnits(takerEthBalance.value, 18));
+};
+
 const main = async () => {
   const sdk = new FusionUniversalKit(config, maker);
+
+  console.log("Maker ETH Address:", maker.address);
+  console.log("Taker ETH Address:", taker.address);
+  console.log("Maker BTC Address:", makerBtc.account.address ?? "");
+  console.log("Taker BTC Address:", takerBtc.account.address ?? "");
+
+  await logBalances();
+
+  console.log("\n⏳ Creating Order...");
 
   // Step 1: Create Order
   const orderDetails: CreateOrderArgs = {
@@ -42,7 +76,7 @@ const main = async () => {
         data: toHex(Buffer.from(makerBtc.account.address ?? "")),
       },
       provides: {
-        amount: parseEther("0.001"),
+        amount: parseEther("0.1"),
         type: "ether",
       },
       sourceAddress: {
@@ -50,7 +84,7 @@ const main = async () => {
         data: maker.address,
       },
       wants: {
-        amount: parseUnits("0.00001", 8),
+        amount: parseUnits("0.003", 8),
         type: "btc",
       },
     },
@@ -58,15 +92,26 @@ const main = async () => {
 
   const order = sdk.createOrder(orderDetails);
 
+  console.log("✅ Order created successfully! Order ID:", order.orderId);
+
+  console.log("\n⏳ Creating Bitcoin HTLC...");
+
   // Step 2: Taker create a Bitcoin HTLC
-  const htlcDetails = sdk.createHTLC({
-    hashlock: Buffer.from(hexToBytes(order.hashlock)),
+  const createHtlcArgs = {
+    hashlock: Buffer.from(order.hashlock.slice(2), "hex"),
     locktime: getCurrentTimestamp() + order.timelocks.cancellationPeriod,
     receiverPublicKey: makerBtc.keyPair.publicKey,
     senderPublicKey: takerBtc.keyPair.publicKey,
-  });
+  };
+  const htlcDetails = sdk.createHTLC(createHtlcArgs);
 
-  console.log("HTLC Address: ", htlcDetails.address);
+  console.log(
+    "✅ HTLC created successfully! HTLC Address:",
+    htlcDetails.address,
+  );
+  console.log("💵 HTLC Balance:", await getBtcBalance(htlcDetails.address));
+
+  console.log("\n⏳ Deploying Escrow Contract...");
 
   // Step 3: Maker deploys Escrow Contract
   const escrowAddress = await sdk.deployEvmEscrow({
@@ -83,7 +128,13 @@ const main = async () => {
     },
   });
 
-  console.log("Escrow Address:", escrowAddress);
+  console.log(
+    "✅ Escrow deployed successfully! Escrow Address:",
+    escrowAddress,
+  );
+  await logBalances();
+
+  console.log("\n⏳ Funding HTLC...");
 
   // Step 4: Taker Funds the HTLC
   const { txId } = await sdk.fundBtcEscrow({
@@ -92,9 +143,28 @@ const main = async () => {
     htlcConfig: htlcDetails,
   });
 
-  console.log("Funding TX ID:", txId);
+  console.log("✅ HTLC funded successfully! HTLC TXID:", txId);
+  await logBalances();
+
+  console.log("💵 HTLC Balance:", await getBtcBalance(htlcDetails.address));
+
+  console.log("\n⏳ Claiming BTC Escrow...");
 
   // Step 5: Maker reveals secret and claims btc from HTLC
+  const claimTxId = await sdk.claimBtcEscrow({
+    btcWallet: makerBtc,
+    htlcAmount: Number(order.maker.wants.amount),
+    htlcArgs: createHtlcArgs,
+    htlcTxid: txId,
+    htlcVout: 0,
+    secret: Buffer.from(hexToBytes(order.secret)),
+  });
+
+  console.log("✅ BTC Escrow claimed successfully! Claim TXID:", claimTxId);
+
+  await logBalances();
+
+  console.log("💵 HTLC Balance:", await getBtcBalance(htlcDetails.address));
 
   // Step 6: Taker sees the revealed secret and claims the eth from Escrow
 };

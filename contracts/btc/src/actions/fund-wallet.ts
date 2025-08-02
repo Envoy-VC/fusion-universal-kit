@@ -1,15 +1,23 @@
-import { exec } from "node:child_process";
+export const fundWallet = async (
+  address: string,
+  amountInBtc: number,
+): Promise<string> => {
+  const apiUrl = "http://localhost:3000/faucet";
 
-export const fundWallet = (address: string) => {
-  exec(`nigiri faucet ${address}`, (error, stdout, stderr) => {
-    if (error) {
-      console.error(`exec error: ${error}`);
-      return;
-    }
-    if (stderr) {
-      console.error(`stderr: ${stderr}`);
-      return;
-    }
-    console.log(stdout);
+  const response = await fetch(apiUrl, {
+    body: JSON.stringify({ address, amount: amountInBtc }),
+    headers: {
+      "Content-Type": "application/json",
+    },
+    method: "POST",
   });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`Faucet request failed: ${errorText}`);
+  }
+
+  const { txid } = (await response.json()) as { txid: string };
+  await new Promise((resolve) => setTimeout(resolve, 2000));
+  return txid;
 };

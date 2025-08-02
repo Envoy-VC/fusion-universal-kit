@@ -8,7 +8,7 @@ export default defineConfig({
   contracts: [
     {
       abi: escrowFactoryAbi as Abi,
-      address: "0x0000000000000000000000000000000000000000",
+      address: "0x700b6A60ce7EaaEA56F065753d8dcB9653dbAD35",
       name: "EscrowFactory",
     },
   ],

@@ -38,7 +38,7 @@ export type FusionOrder = {
   };
 
   secret: Hex;
-  hashlock: Hex;
+  hashlock: string;
 
   timelocks: {
     withdrawalPeriod: number;

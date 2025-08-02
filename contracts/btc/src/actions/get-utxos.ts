@@ -7,7 +7,7 @@ interface BitcoinUTXO {
 }
 
 export const getUTXOs = async (address: string): Promise<BitcoinUTXO[]> => {
-  const apiUrl = `http://localhost:5000/address/${address}/utxo`;
+  const apiUrl = `http://localhost:3000/address/${address}/utxo`;
 
   const response = await fetch(apiUrl);
   const data = await response.json();

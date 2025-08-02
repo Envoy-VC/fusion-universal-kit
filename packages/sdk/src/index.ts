@@ -1,4 +1,8 @@
-import { type CreateHTLCArgs, createHTLC } from "@repo/btc";
+import {
+  type CreateClaimTxArgs,
+  type CreateHTLCArgs,
+  createHTLC,
+} from "@repo/btc";
 import type { Config } from "@wagmi/core";
 import type { Account } from "viem";
 
@@ -32,5 +36,9 @@ export class FusionUniversalKit {
 
   async fundBtcEscrow(args: FundBtcEscrowArgs) {
     return await actions.fundBtcEscrow(args);
+  }
+
+  async claimBtcEscrow(args: CreateClaimTxArgs) {
+    return await actions.claimBtcEscrow(args);
   }
 }

@@ -1,36 +1,23 @@
 export const broadcastTransaction = async (txHex: string): Promise<string> => {
-  const apiUrl = "http://localhost:18443";
-  const credentials = Buffer.from("nigiri:nigiri").toString("base64");
-
-  console.log("📡 Broadcasting transaction to local Nigiri node:", apiUrl);
-
-  // Construct the JSON-RPC request payload
-  const requestBody = JSON.stringify({
-    id: "broadcast",
-    jsonrpc: "1.0",
-    method: "sendrawtransaction",
-    params: [txHex],
-  });
+  // Change the URL to the Chopsticks proxy endpoint for broadcasting
+  const apiUrl = "http://localhost:3000/tx";
 
   const response = await fetch(apiUrl, {
-    body: requestBody,
+    // The body is just the raw transaction hex
+    body: txHex,
     headers: {
-      // biome-ignore lint/style/useNamingConvention: safe
-      Authorization: `Basic ${credentials}`,
-      "Content-Type": "application/json",
+      "Content-Type": "text/plain",
     },
     method: "POST",
   });
 
-  const responseData = (await response.json()) as
-    | { result: string }
-    | { error: string };
-
-  // Check for an error in the JSON-RPC response
-  if ("error" in responseData) {
-    throw new Error(`Broadcast failed: ${JSON.stringify(responseData.error)}`);
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`Broadcast failed: ${errorText}`);
   }
 
-  const txid = responseData.result;
+  // The response body is the transaction ID
+  const txid = await response.text();
+  console.log("✅ Transaction broadcasted successfully! TXID:", txid);
   return txid;
 };

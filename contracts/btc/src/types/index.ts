@@ -20,3 +20,21 @@ export interface CreateHTLCArgs {
   hashlock: Buffer;
   locktime: number;
 }
+
+export interface CreateClaimTxArgs {
+  htlcArgs: CreateHTLCArgs;
+  htlcTxid: string;
+  htlcVout: number;
+  htlcAmount: number;
+  secret: Buffer;
+  feeRate?: number;
+  btcWallet: BtcWallet;
+}
+
+export interface CreateClaimTxResult {
+  fee: number;
+  hex: string;
+  txid: string;
+  vsize: number;
+  witnessHash: string;
+}

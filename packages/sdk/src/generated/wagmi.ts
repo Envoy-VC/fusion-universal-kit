@@ -636,7 +636,7 @@ export const escrowFactoryAbi = [
 ] as const;
 
 export const escrowFactoryAddress =
-  "0x0000000000000000000000000000000000000000" as const;
+  "0x700b6A60ce7EaaEA56F065753d8dcB9653dbAD35" as const;
 
 export const escrowFactoryConfig = {
   abi: escrowFactoryAbi,
