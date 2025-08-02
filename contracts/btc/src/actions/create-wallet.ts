@@ -2,7 +2,9 @@ import * as bitcoin from "bitcoinjs-lib";
 import ECPairFactory from "ecpair";
 import * as ecc from "tiny-secp256k1";
 
-export const createWallet = (network: bitcoin.Network) => {
+import type { BtcWallet } from "@/types";
+
+export const createWallet = (network: bitcoin.Network): BtcWallet => {
   const ECPair = ECPairFactory(ecc);
 
   const keyPair = ECPair.makeRandom({ network });

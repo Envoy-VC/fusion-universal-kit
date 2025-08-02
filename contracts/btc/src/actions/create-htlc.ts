@@ -2,6 +2,8 @@
 
 import * as bitcoin from "bitcoinjs-lib";
 
+import type { HTLCResult } from "@/types";
+
 interface CreateHTLCArgs {
   senderPublicKey: Buffer;
   receiverPublicKey: Buffer;
@@ -10,7 +12,7 @@ interface CreateHTLCArgs {
   network: bitcoin.Network;
 }
 
-export const createHTLC = (args: CreateHTLCArgs) => {
+export const createHTLC = (args: CreateHTLCArgs): HTLCResult => {
   const { senderPublicKey, receiverPublicKey, hashlock, locktime, network } =
     args;
   const redeemScript = bitcoin.script.compile([
