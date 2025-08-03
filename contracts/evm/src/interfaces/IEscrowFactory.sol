@@ -51,16 +51,4 @@ interface IEscrowFactory {
      * @return The computed address of the destination escrow
      */
     function addressOfEscrowDst(IBaseEscrow.Immutables calldata immutables) external view returns (address);
-
-    /**
-     * @notice Returns the source escrow implementation address
-     * @return The address of the source escrow implementation
-     */
-    function ESCROW_SRC_IMPLEMENTATION() external view returns (address);
-
-    /**
-     * @notice Returns the destination escrow implementation address
-     * @return The address of the destination escrow implementation
-     */
-    function ESCROW_DST_IMPLEMENTATION() external view returns (address);
 }

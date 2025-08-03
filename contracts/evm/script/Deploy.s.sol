@@ -16,7 +16,7 @@ contract DeployScript is Script {
 
         IERC20 accessToken = IERC20(address(0));
 
-        EscrowFactory factory = new EscrowFactory(accessToken, deployerAddress, 0, 0, 0, deployerAddress);
+        EscrowFactory factory = new EscrowFactory(accessToken, deployerAddress, 0, deployerAddress);
         console.log("Factory deployed to:", address(factory));
 
         vm.stopBroadcast();

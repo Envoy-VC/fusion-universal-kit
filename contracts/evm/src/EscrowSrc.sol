@@ -17,7 +17,6 @@ contract EscrowSrc is Escrow {
 
     constructor(uint32 rescueDelay, IERC20 accessToken) payable BaseEscrow(rescueDelay, accessToken) {}
 
-    // Allow contract to receive ETH
     receive() external payable {}
 
     /**
@@ -31,8 +30,8 @@ contract EscrowSrc is Escrow {
         override
         onlyValidImmutables(immutables)
         onlyValidSecret(secret, immutables)
-        onlyAfter(immutables.timelocks.get(TimelocksLib.Stage.DstWithdrawal))
-        onlyBefore(immutables.timelocks.get(TimelocksLib.Stage.DstCancellation))
+        onlyAfter(immutables.timelocks.get(TimelocksLib.Stage.SrcWithdrawal))
+        onlyBefore(immutables.timelocks.get(TimelocksLib.Stage.SrcCancellation))
     {
         // Allow both maker and taker to withdraw in private period
         if (

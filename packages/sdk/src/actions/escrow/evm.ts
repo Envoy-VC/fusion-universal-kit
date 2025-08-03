@@ -1,19 +1,25 @@
 import {
   type Config,
   getBalance,
+  getBlock,
   waitForTransactionReceipt,
 } from "@wagmi/core";
 import { createWriteContract } from "@wagmi/core/codegen";
-import { type Account, keccak256, parseEther, zeroAddress } from "viem";
+import {
+  type Account,
+  keccak256,
+  parseEther,
+  parseEventLogs,
+  zeroAddress,
+} from "viem";
 
 import {
+  escrowFactoryAbi,
   escrowSrcAbi,
-  readEscrowFactoryAddressOfEscrowSrc,
   readEscrowFactoryCreationFee,
-  simulateEscrowFactoryCreateSrcEscrow,
   writeEscrowFactoryCreateSrcEscrow,
 } from "@/generated/wagmi";
-import { getCurrentTimestamp, toUniversalAddress } from "@/helpers";
+import { toUniversalAddress } from "@/helpers";
 import type { DeployEvmEscrowArgs, WithdrawEvmEscrowArgs } from "@/types";
 
 export const deployEvmEscrow = async (
@@ -35,7 +41,9 @@ export const deployEvmEscrow = async (
     throw new Error("Source Address does not match order maker");
   }
 
-  const now = getCurrentTimestamp();
+  // For anvil now is from rpc call
+  const now = (await getBlock(wagmiConfig, { blockTag: "latest" })).timestamp;
+  console.log(now);
   const safetyDeposit = parseEther("0");
   const creationFee = await readEscrowFactoryCreationFee(wagmiConfig, {
     args: [],
@@ -81,27 +89,18 @@ export const deployEvmEscrow = async (
     token: zeroAddress,
   };
 
-  try {
-    await readEscrowFactoryAddressOfEscrowSrc(wagmiConfig, {
-      args: [immutables],
-    });
-  } catch (error: unknown) {
-    console.error(error);
-    throw new Error("Unable to compute escrow address");
-  }
-
-  const request = {
+  const hash = await writeEscrowFactoryCreateSrcEscrow(wagmiConfig, {
     account,
     args: [immutables],
     value: totalAmount,
-  } as const;
+  });
 
-  const res = await simulateEscrowFactoryCreateSrcEscrow(wagmiConfig, request);
-  const escrowAddress = res.result;
+  const receipt = await waitForTransactionReceipt(wagmiConfig, { hash });
 
-  const hash = await writeEscrowFactoryCreateSrcEscrow(wagmiConfig, request);
-
-  await waitForTransactionReceipt(wagmiConfig, { hash });
+  const logs = parseEventLogs({ abi: escrowFactoryAbi, logs: receipt.logs });
+  // biome-ignore lint/style/noNonNullAssertion: safe
+  const creationLog = logs.find((l) => l.eventName === "SrcEscrowCreated")!;
+  const escrowAddress = creationLog.args.escrow;
 
   return { escrowAddress, immutables };
 };

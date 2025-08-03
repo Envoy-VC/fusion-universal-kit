@@ -17,7 +17,6 @@ contract EscrowDst is Escrow {
 
     constructor(uint32 rescueDelay, IERC20 accessToken) payable BaseEscrow(rescueDelay, accessToken) {}
 
-    // Allow contract to receive ETH
     receive() external payable {}
 
     /**

@@ -23,17 +23,11 @@ contract EscrowFactory is IEscrowFactory, Ownable {
     using AddressLib for UniversalAddress;
     using TimelocksLib for Timelocks;
 
-    /// @notice Implementation contract for source escrows
-    address public immutable ESCROW_SRC_IMPLEMENTATION;
+    /// @notice bytecode hash for source escrows
+    bytes32 private immutable _SRC_BYTECODE_HASH;
 
-    /// @notice Implementation contract for destination escrows
-    address public immutable ESCROW_DST_IMPLEMENTATION;
-
-    /// @notice Proxy bytecode hash for source escrows
-    bytes32 private immutable _PROXY_SRC_BYTECODE_HASH;
-
-    /// @notice Proxy bytecode hash for destination escrows
-    bytes32 private immutable _PROXY_DST_BYTECODE_HASH;
+    /// @notice bytecode hash for destination escrows
+    bytes32 private immutable _DST_BYTECODE_HASH;
 
     /// @notice Access token for public operations
     IERC20 public immutable ACCESS_TOKEN;
@@ -50,25 +44,17 @@ contract EscrowFactory is IEscrowFactory, Ownable {
     event CreationFeeUpdated(uint256 oldFee, uint256 newFee);
     event TreasuryUpdated(address oldTreasury, address newTreasury);
 
-    constructor(
-        IERC20 accessToken,
-        address owner,
-        uint32 rescueDelaySrc,
-        uint32 rescueDelayDst,
-        uint256 _creationFee,
-        address _treasury
-    ) Ownable(owner) {
+    constructor(IERC20 accessToken, address owner, uint256 _creationFee, address _treasury) Ownable(owner) {
         ACCESS_TOKEN = accessToken;
         creationFee = _creationFee;
         treasury = _treasury;
 
-        // Deploy implementations
-        ESCROW_SRC_IMPLEMENTATION = address(new EscrowSrc(rescueDelaySrc, accessToken));
-        ESCROW_DST_IMPLEMENTATION = address(new EscrowDst(rescueDelayDst, accessToken));
+        bytes memory srcBytecode = abi.encodePacked(type(EscrowSrc).creationCode, abi.encode(0, ACCESS_TOKEN));
+        bytes memory dstBytecode = abi.encodePacked(type(EscrowSrc).creationCode, abi.encode(0, ACCESS_TOKEN));
 
         // Compute proxy bytecode hashes
-        _PROXY_SRC_BYTECODE_HASH = ProxyHashLib.computeProxyBytecodeHash(ESCROW_SRC_IMPLEMENTATION);
-        _PROXY_DST_BYTECODE_HASH = ProxyHashLib.computeProxyBytecodeHash(ESCROW_DST_IMPLEMENTATION);
+        _SRC_BYTECODE_HASH = keccak256(srcBytecode);
+        _DST_BYTECODE_HASH = keccak256(dstBytecode);
     }
 
     /**
@@ -89,7 +75,7 @@ contract EscrowFactory is IEscrowFactory, Ownable {
         }
 
         // Deploy escrow
-        address escrow = _deployEscrow(immutables, _PROXY_SRC_BYTECODE_HASH, requiredForEscrow);
+        address escrow = _deployEscrow(immutables, _SRC_BYTECODE_HASH, requiredForEscrow);
 
         // Transfer ERC20 tokens if needed
         if (token != address(0)) {
@@ -123,7 +109,7 @@ contract EscrowFactory is IEscrowFactory, Ownable {
         }
 
         // Deploy escrow
-        address escrow = _deployEscrow(immutables, _PROXY_DST_BYTECODE_HASH, requiredForEscrow);
+        address escrow = _deployEscrow(immutables, _DST_BYTECODE_HASH, requiredForEscrow);
 
         // Transfer ERC20 tokens if needed
         if (token != address(0)) {
@@ -144,7 +130,7 @@ contract EscrowFactory is IEscrowFactory, Ownable {
         modifiedImmutables.timelocks = immutables.timelocks.setDeployedAt(block.timestamp);
 
         bytes32 salt = ImmutablesLib.hashMem(modifiedImmutables);
-        return Create2.computeAddress(salt, _PROXY_SRC_BYTECODE_HASH, address(this));
+        return Create2.computeAddress(salt, _SRC_BYTECODE_HASH, address(this));
     }
 
     /**
@@ -155,7 +141,7 @@ contract EscrowFactory is IEscrowFactory, Ownable {
         modifiedImmutables.timelocks = immutables.timelocks.setDeployedAt(block.timestamp);
 
         bytes32 salt = ImmutablesLib.hashMem(modifiedImmutables);
-        return Create2.computeAddress(salt, _PROXY_DST_BYTECODE_HASH, address(this));
+        return Create2.computeAddress(salt, _DST_BYTECODE_HASH, address(this));
     }
 
     /**
@@ -192,15 +178,16 @@ contract EscrowFactory is IEscrowFactory, Ownable {
         // Compute salt and deploy escrow with Create2
         bytes32 salt = ImmutablesLib.hashMem(modifiedImmutables);
 
-        // Create minimal proxy bytecode
-        bytes memory bytecode = abi.encodePacked(
-            hex"3d602d80600a3d3981f3363d3d373d3d3d363d73",
-            proxyBytecodeHash == _PROXY_SRC_BYTECODE_HASH ? ESCROW_SRC_IMPLEMENTATION : ESCROW_DST_IMPLEMENTATION,
-            hex"5af43d82803e903d91602b57fd5bf3"
-        );
+        address escrow;
+        if (proxyBytecodeHash == _SRC_BYTECODE_HASH) {
+            bytes memory srcBytecode = abi.encodePacked(type(EscrowSrc).creationCode, abi.encode(0, ACCESS_TOKEN));
+            escrow = Create2.deploy(ethAmount, salt, srcBytecode);
+        } else {
+            bytes memory dstBytecode = abi.encodePacked(type(EscrowDst).creationCode, abi.encode(0, ACCESS_TOKEN));
+            escrow = Create2.deploy(ethAmount, salt, dstBytecode);
+        }
 
-        // Deploy escrow with required ETH
-        return Create2.deploy(ethAmount, salt, bytecode);
+        return escrow;
     }
 
     /**

@@ -19,10 +19,10 @@ import { FusionUniversalKit } from "../src";
 
 // Default Anvil Accounts
 const maker = privateKeyToAccount(
-  "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80",
+  "0x879165d71dc5fa6ee33e435afaa02dcd3faa6b971781099b229dac9163eeab9f",
 );
 const taker = privateKeyToAccount(
-  "0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d",
+  "0xdbb5455481accbf80f75577759a1be8b4cabf90ae985537d4574614d09072f36",
 );
 
 // Testing BTC Accounts
@@ -92,7 +92,7 @@ const main = async () => {
         data: toHex(Buffer.from(makerBtc.account.address)),
       },
       provides: {
-        amount: parseEther("1"),
+        amount: parseEther("0.001"),
         type: "ether",
       },
       sourceAddress: {
@@ -100,7 +100,7 @@ const main = async () => {
         data: maker.address,
       },
       wants: {
-        amount: parseUnits("0.003", 8),
+        amount: parseUnits("0.0001", 8),
         type: "btc",
       },
     },
