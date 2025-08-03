@@ -30,13 +30,13 @@ interface IEscrowFactory {
      * @notice Creates a source escrow
      * @param immutables The escrow immutables
      */
-    function createSrcEscrow(IBaseEscrow.Immutables calldata immutables) external payable;
+    function createSrcEscrow(IBaseEscrow.Immutables calldata immutables) external payable returns (address);
 
     /**
      * @notice Creates a destination escrow
      * @param immutables The escrow immutables
      */
-    function createDstEscrow(IBaseEscrow.Immutables calldata immutables) external payable;
+    function createDstEscrow(IBaseEscrow.Immutables calldata immutables) external payable returns (address);
 
     /**
      * @notice Returns the deterministic address of a source escrow

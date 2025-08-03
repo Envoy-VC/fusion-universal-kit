@@ -38,7 +38,7 @@ export type FusionOrder = {
   };
 
   secret: Hex;
-  hashlock: string;
+  hashlock: Hex;
 
   timelocks: {
     withdrawalPeriod: number;
@@ -46,6 +46,35 @@ export type FusionOrder = {
   };
 
   status: "pending" | "fulfilled" | "cancelled" | "created" | "expired";
+};
+
+export type Immutables = {
+  amount: bigint;
+  hashlock: Hex;
+  maker: {
+    destination: {
+      chain: number;
+      data: `0x${string}`;
+    };
+    source: {
+      chain: number;
+      data: `0x${string}`;
+    };
+  };
+  orderHash: `0x${string}`;
+  safetyDeposit: bigint;
+  taker: {
+    destination: {
+      chain: number;
+      data: `0x${string}`;
+    };
+    source: {
+      chain: number;
+      data: `0x${string}`;
+    };
+  };
+  timelocks: bigint;
+  token: Hex;
 };
 
 export interface CreateOrderArgs {
@@ -69,4 +98,10 @@ export interface FundBtcEscrowArgs {
   htlcConfig: HTLCResult;
   btcWallet: BtcWallet;
   amountInSatoshis: number;
+}
+
+export interface WithdrawEvmEscrowArgs {
+  escrowAddress: Hex;
+  secret: Hex;
+  immutables: Immutables;
 }

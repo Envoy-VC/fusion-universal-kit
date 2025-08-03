@@ -3,21 +3,18 @@ import {
   getBalance,
   waitForTransactionReceipt,
 } from "@wagmi/core";
-import {
-  type Account,
-  type Hex,
-  keccak256,
-  parseEther,
-  zeroAddress,
-} from "viem";
+import { createWriteContract } from "@wagmi/core/codegen";
+import { type Account, keccak256, parseEther, zeroAddress } from "viem";
 
 import {
+  escrowSrcAbi,
   readEscrowFactoryAddressOfEscrowSrc,
   readEscrowFactoryCreationFee,
+  simulateEscrowFactoryCreateSrcEscrow,
   writeEscrowFactoryCreateSrcEscrow,
 } from "@/generated/wagmi";
 import { getCurrentTimestamp, toUniversalAddress } from "@/helpers";
-import type { DeployEvmEscrowArgs } from "@/types";
+import type { DeployEvmEscrowArgs, WithdrawEvmEscrowArgs } from "@/types";
 
 export const deployEvmEscrow = async (
   wagmiConfig: Config,
@@ -84,10 +81,8 @@ export const deployEvmEscrow = async (
     token: zeroAddress,
   };
 
-  let escrowAddress: Hex;
-
   try {
-    escrowAddress = await readEscrowFactoryAddressOfEscrowSrc(wagmiConfig, {
+    await readEscrowFactoryAddressOfEscrowSrc(wagmiConfig, {
       args: [immutables],
     });
   } catch (error: unknown) {
@@ -95,13 +90,41 @@ export const deployEvmEscrow = async (
     throw new Error("Unable to compute escrow address");
   }
 
-  const hash = await writeEscrowFactoryCreateSrcEscrow(wagmiConfig, {
+  const request = {
     account,
     args: [immutables],
     value: totalAmount,
+  } as const;
+
+  const res = await simulateEscrowFactoryCreateSrcEscrow(wagmiConfig, request);
+  const escrowAddress = res.result;
+
+  const hash = await writeEscrowFactoryCreateSrcEscrow(wagmiConfig, request);
+
+  await waitForTransactionReceipt(wagmiConfig, { hash });
+
+  return { escrowAddress, immutables };
+};
+
+export const withdrawEvmEscrow = async (
+  wagmiConfig: Config,
+  args: WithdrawEvmEscrowArgs,
+  account?: Account,
+) => {
+  const { escrowAddress, secret, immutables } = args;
+
+  const writeEscrowSrcWithdraw = createWriteContract({
+    abi: escrowSrcAbi,
+    address: escrowAddress,
+    functionName: "withdraw",
+  });
+
+  const hash = await writeEscrowSrcWithdraw(wagmiConfig, {
+    account,
+    args: [secret, immutables],
   });
 
   await waitForTransactionReceipt(wagmiConfig, { hash });
 
-  return escrowAddress;
+  return hash;
 };

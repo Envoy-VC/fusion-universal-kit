@@ -1,8 +1,9 @@
 import { defineConfig } from "@wagmi/cli";
 import { actions } from "@wagmi/cli/plugins";
-import type { Abi } from "viem";
+import { type Abi, zeroAddress } from "viem";
 
 import { abi as escrowFactoryAbi } from "../../contracts/evm/out/EscrowFactory.sol/EscrowFactory.json";
+import { abi as escrowSrcAbi } from "../../contracts/evm/out/EscrowSrc.sol/EscrowSrc.json";
 
 export default defineConfig({
   contracts: [
@@ -10,6 +11,11 @@ export default defineConfig({
       abi: escrowFactoryAbi as Abi,
       address: "0x700b6A60ce7EaaEA56F065753d8dcB9653dbAD35",
       name: "EscrowFactory",
+    },
+    {
+      abi: escrowSrcAbi as Abi,
+      address: zeroAddress,
+      name: "EscrowSrc",
     },
   ],
   out: "./src/generated/wagmi.ts",

@@ -300,7 +300,7 @@ export const escrowFactoryAbi = [
       },
     ],
     name: "createDstEscrow",
-    outputs: [],
+    outputs: [{ internalType: "address", name: "", type: "address" }],
     stateMutability: "payable",
     type: "function",
   },
@@ -387,7 +387,7 @@ export const escrowFactoryAbi = [
       },
     ],
     name: "createSrcEscrow",
-    outputs: [],
+    outputs: [{ internalType: "address", name: "", type: "address" }],
     stateMutability: "payable",
     type: "function",
   },
@@ -641,6 +641,460 @@ export const escrowFactoryAddress =
 export const escrowFactoryConfig = {
   abi: escrowFactoryAbi,
   address: escrowFactoryAddress,
+} as const;
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// EscrowSrc
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+export const escrowSrcAbi = [
+  {
+    inputs: [
+      { internalType: "uint32", name: "rescueDelay", type: "uint32" },
+      { internalType: "contract IERC20", name: "accessToken", type: "address" },
+    ],
+    stateMutability: "nonpayable",
+    type: "constructor",
+  },
+  { stateMutability: "payable", type: "receive" },
+  {
+    inputs: [],
+    name: "FACTORY",
+    outputs: [{ internalType: "address", name: "", type: "address" }],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [],
+    name: "PROXY_BYTECODE_HASH",
+    outputs: [{ internalType: "bytes32", name: "", type: "bytes32" }],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [],
+    name: "RESCUE_DELAY",
+    outputs: [{ internalType: "uint256", name: "", type: "uint256" }],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [
+      {
+        components: [
+          { internalType: "bytes32", name: "orderHash", type: "bytes32" },
+          { internalType: "bytes32", name: "hashlock", type: "bytes32" },
+          {
+            components: [
+              {
+                components: [
+                  {
+                    internalType: "enum ChainType",
+                    name: "chain",
+                    type: "uint8",
+                  },
+                  { internalType: "bytes", name: "data", type: "bytes" },
+                ],
+                internalType: "struct UniversalAddress",
+                name: "source",
+                type: "tuple",
+              },
+              {
+                components: [
+                  {
+                    internalType: "enum ChainType",
+                    name: "chain",
+                    type: "uint8",
+                  },
+                  { internalType: "bytes", name: "data", type: "bytes" },
+                ],
+                internalType: "struct UniversalAddress",
+                name: "destination",
+                type: "tuple",
+              },
+            ],
+            internalType: "struct Address",
+            name: "maker",
+            type: "tuple",
+          },
+          {
+            components: [
+              {
+                components: [
+                  {
+                    internalType: "enum ChainType",
+                    name: "chain",
+                    type: "uint8",
+                  },
+                  { internalType: "bytes", name: "data", type: "bytes" },
+                ],
+                internalType: "struct UniversalAddress",
+                name: "source",
+                type: "tuple",
+              },
+              {
+                components: [
+                  {
+                    internalType: "enum ChainType",
+                    name: "chain",
+                    type: "uint8",
+                  },
+                  { internalType: "bytes", name: "data", type: "bytes" },
+                ],
+                internalType: "struct UniversalAddress",
+                name: "destination",
+                type: "tuple",
+              },
+            ],
+            internalType: "struct Address",
+            name: "taker",
+            type: "tuple",
+          },
+          { internalType: "address", name: "token", type: "address" },
+          { internalType: "uint256", name: "amount", type: "uint256" },
+          { internalType: "uint256", name: "safetyDeposit", type: "uint256" },
+          { internalType: "Timelocks", name: "timelocks", type: "uint256" },
+        ],
+        internalType: "struct IBaseEscrow.Immutables",
+        name: "immutables",
+        type: "tuple",
+      },
+    ],
+    name: "cancel",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
+    inputs: [
+      { internalType: "bytes32", name: "secret", type: "bytes32" },
+      {
+        components: [
+          { internalType: "bytes32", name: "orderHash", type: "bytes32" },
+          { internalType: "bytes32", name: "hashlock", type: "bytes32" },
+          {
+            components: [
+              {
+                components: [
+                  {
+                    internalType: "enum ChainType",
+                    name: "chain",
+                    type: "uint8",
+                  },
+                  { internalType: "bytes", name: "data", type: "bytes" },
+                ],
+                internalType: "struct UniversalAddress",
+                name: "source",
+                type: "tuple",
+              },
+              {
+                components: [
+                  {
+                    internalType: "enum ChainType",
+                    name: "chain",
+                    type: "uint8",
+                  },
+                  { internalType: "bytes", name: "data", type: "bytes" },
+                ],
+                internalType: "struct UniversalAddress",
+                name: "destination",
+                type: "tuple",
+              },
+            ],
+            internalType: "struct Address",
+            name: "maker",
+            type: "tuple",
+          },
+          {
+            components: [
+              {
+                components: [
+                  {
+                    internalType: "enum ChainType",
+                    name: "chain",
+                    type: "uint8",
+                  },
+                  { internalType: "bytes", name: "data", type: "bytes" },
+                ],
+                internalType: "struct UniversalAddress",
+                name: "source",
+                type: "tuple",
+              },
+              {
+                components: [
+                  {
+                    internalType: "enum ChainType",
+                    name: "chain",
+                    type: "uint8",
+                  },
+                  { internalType: "bytes", name: "data", type: "bytes" },
+                ],
+                internalType: "struct UniversalAddress",
+                name: "destination",
+                type: "tuple",
+              },
+            ],
+            internalType: "struct Address",
+            name: "taker",
+            type: "tuple",
+          },
+          { internalType: "address", name: "token", type: "address" },
+          { internalType: "uint256", name: "amount", type: "uint256" },
+          { internalType: "uint256", name: "safetyDeposit", type: "uint256" },
+          { internalType: "Timelocks", name: "timelocks", type: "uint256" },
+        ],
+        internalType: "struct IBaseEscrow.Immutables",
+        name: "immutables",
+        type: "tuple",
+      },
+    ],
+    name: "publicWithdraw",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
+    inputs: [
+      { internalType: "address", name: "token", type: "address" },
+      { internalType: "uint256", name: "amount", type: "uint256" },
+      {
+        components: [
+          { internalType: "bytes32", name: "orderHash", type: "bytes32" },
+          { internalType: "bytes32", name: "hashlock", type: "bytes32" },
+          {
+            components: [
+              {
+                components: [
+                  {
+                    internalType: "enum ChainType",
+                    name: "chain",
+                    type: "uint8",
+                  },
+                  { internalType: "bytes", name: "data", type: "bytes" },
+                ],
+                internalType: "struct UniversalAddress",
+                name: "source",
+                type: "tuple",
+              },
+              {
+                components: [
+                  {
+                    internalType: "enum ChainType",
+                    name: "chain",
+                    type: "uint8",
+                  },
+                  { internalType: "bytes", name: "data", type: "bytes" },
+                ],
+                internalType: "struct UniversalAddress",
+                name: "destination",
+                type: "tuple",
+              },
+            ],
+            internalType: "struct Address",
+            name: "maker",
+            type: "tuple",
+          },
+          {
+            components: [
+              {
+                components: [
+                  {
+                    internalType: "enum ChainType",
+                    name: "chain",
+                    type: "uint8",
+                  },
+                  { internalType: "bytes", name: "data", type: "bytes" },
+                ],
+                internalType: "struct UniversalAddress",
+                name: "source",
+                type: "tuple",
+              },
+              {
+                components: [
+                  {
+                    internalType: "enum ChainType",
+                    name: "chain",
+                    type: "uint8",
+                  },
+                  { internalType: "bytes", name: "data", type: "bytes" },
+                ],
+                internalType: "struct UniversalAddress",
+                name: "destination",
+                type: "tuple",
+              },
+            ],
+            internalType: "struct Address",
+            name: "taker",
+            type: "tuple",
+          },
+          { internalType: "address", name: "token", type: "address" },
+          { internalType: "uint256", name: "amount", type: "uint256" },
+          { internalType: "uint256", name: "safetyDeposit", type: "uint256" },
+          { internalType: "Timelocks", name: "timelocks", type: "uint256" },
+        ],
+        internalType: "struct IBaseEscrow.Immutables",
+        name: "immutables",
+        type: "tuple",
+      },
+    ],
+    name: "rescueFunds",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
+    inputs: [
+      { internalType: "bytes32", name: "secret", type: "bytes32" },
+      {
+        components: [
+          { internalType: "bytes32", name: "orderHash", type: "bytes32" },
+          { internalType: "bytes32", name: "hashlock", type: "bytes32" },
+          {
+            components: [
+              {
+                components: [
+                  {
+                    internalType: "enum ChainType",
+                    name: "chain",
+                    type: "uint8",
+                  },
+                  { internalType: "bytes", name: "data", type: "bytes" },
+                ],
+                internalType: "struct UniversalAddress",
+                name: "source",
+                type: "tuple",
+              },
+              {
+                components: [
+                  {
+                    internalType: "enum ChainType",
+                    name: "chain",
+                    type: "uint8",
+                  },
+                  { internalType: "bytes", name: "data", type: "bytes" },
+                ],
+                internalType: "struct UniversalAddress",
+                name: "destination",
+                type: "tuple",
+              },
+            ],
+            internalType: "struct Address",
+            name: "maker",
+            type: "tuple",
+          },
+          {
+            components: [
+              {
+                components: [
+                  {
+                    internalType: "enum ChainType",
+                    name: "chain",
+                    type: "uint8",
+                  },
+                  { internalType: "bytes", name: "data", type: "bytes" },
+                ],
+                internalType: "struct UniversalAddress",
+                name: "source",
+                type: "tuple",
+              },
+              {
+                components: [
+                  {
+                    internalType: "enum ChainType",
+                    name: "chain",
+                    type: "uint8",
+                  },
+                  { internalType: "bytes", name: "data", type: "bytes" },
+                ],
+                internalType: "struct UniversalAddress",
+                name: "destination",
+                type: "tuple",
+              },
+            ],
+            internalType: "struct Address",
+            name: "taker",
+            type: "tuple",
+          },
+          { internalType: "address", name: "token", type: "address" },
+          { internalType: "uint256", name: "amount", type: "uint256" },
+          { internalType: "uint256", name: "safetyDeposit", type: "uint256" },
+          { internalType: "Timelocks", name: "timelocks", type: "uint256" },
+        ],
+        internalType: "struct IBaseEscrow.Immutables",
+        name: "immutables",
+        type: "tuple",
+      },
+    ],
+    name: "withdraw",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+  { anonymous: false, inputs: [], name: "EscrowCancelled", type: "event" },
+  {
+    anonymous: false,
+    inputs: [
+      {
+        indexed: false,
+        internalType: "bytes32",
+        name: "secret",
+        type: "bytes32",
+      },
+    ],
+    name: "EscrowWithdrawal",
+    type: "event",
+  },
+  {
+    anonymous: false,
+    inputs: [
+      {
+        indexed: false,
+        internalType: "address",
+        name: "token",
+        type: "address",
+      },
+      {
+        indexed: false,
+        internalType: "uint256",
+        name: "amount",
+        type: "uint256",
+      },
+    ],
+    name: "FundsRescued",
+    type: "event",
+  },
+  {
+    inputs: [{ internalType: "address", name: "target", type: "address" }],
+    name: "AddressEmptyCode",
+    type: "error",
+  },
+  { inputs: [], name: "FailedCall", type: "error" },
+  {
+    inputs: [
+      { internalType: "uint256", name: "balance", type: "uint256" },
+      { internalType: "uint256", name: "needed", type: "uint256" },
+    ],
+    name: "InsufficientBalance",
+    type: "error",
+  },
+  { inputs: [], name: "InvalidCaller", type: "error" },
+  { inputs: [], name: "InvalidImmutables", type: "error" },
+  { inputs: [], name: "InvalidSecret", type: "error" },
+  { inputs: [], name: "InvalidTime", type: "error" },
+  { inputs: [], name: "NativeTokenSendingFailure", type: "error" },
+  {
+    inputs: [{ internalType: "address", name: "token", type: "address" }],
+    name: "SafeERC20FailedOperation",
+    type: "error",
+  },
+] as const;
+
+export const escrowSrcAddress =
+  "0x0000000000000000000000000000000000000000" as const;
+
+export const escrowSrcConfig = {
+  abi: escrowSrcAbi,
+  address: escrowSrcAddress,
 } as const;
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -922,4 +1376,167 @@ export const watchEscrowFactoryTreasuryUpdatedEvent =
     abi: escrowFactoryAbi,
     address: escrowFactoryAddress,
     eventName: "TreasuryUpdated",
+  });
+
+/**
+ * Wraps __{@link readContract}__ with `abi` set to __{@link escrowSrcAbi}__
+ */
+export const readEscrowSrc = /*#__PURE__*/ createReadContract({
+  abi: escrowSrcAbi,
+  address: escrowSrcAddress,
+});
+
+/**
+ * Wraps __{@link readContract}__ with `abi` set to __{@link escrowSrcAbi}__ and `functionName` set to `"FACTORY"`
+ */
+export const readEscrowSrcFactory = /*#__PURE__*/ createReadContract({
+  abi: escrowSrcAbi,
+  address: escrowSrcAddress,
+  functionName: "FACTORY",
+});
+
+/**
+ * Wraps __{@link readContract}__ with `abi` set to __{@link escrowSrcAbi}__ and `functionName` set to `"PROXY_BYTECODE_HASH"`
+ */
+export const readEscrowSrcProxyBytecodeHash = /*#__PURE__*/ createReadContract({
+  abi: escrowSrcAbi,
+  address: escrowSrcAddress,
+  functionName: "PROXY_BYTECODE_HASH",
+});
+
+/**
+ * Wraps __{@link readContract}__ with `abi` set to __{@link escrowSrcAbi}__ and `functionName` set to `"RESCUE_DELAY"`
+ */
+export const readEscrowSrcRescueDelay = /*#__PURE__*/ createReadContract({
+  abi: escrowSrcAbi,
+  address: escrowSrcAddress,
+  functionName: "RESCUE_DELAY",
+});
+
+/**
+ * Wraps __{@link writeContract}__ with `abi` set to __{@link escrowSrcAbi}__
+ */
+export const writeEscrowSrc = /*#__PURE__*/ createWriteContract({
+  abi: escrowSrcAbi,
+  address: escrowSrcAddress,
+});
+
+/**
+ * Wraps __{@link writeContract}__ with `abi` set to __{@link escrowSrcAbi}__ and `functionName` set to `"cancel"`
+ */
+export const writeEscrowSrcCancel = /*#__PURE__*/ createWriteContract({
+  abi: escrowSrcAbi,
+  address: escrowSrcAddress,
+  functionName: "cancel",
+});
+
+/**
+ * Wraps __{@link writeContract}__ with `abi` set to __{@link escrowSrcAbi}__ and `functionName` set to `"publicWithdraw"`
+ */
+export const writeEscrowSrcPublicWithdraw = /*#__PURE__*/ createWriteContract({
+  abi: escrowSrcAbi,
+  address: escrowSrcAddress,
+  functionName: "publicWithdraw",
+});
+
+/**
+ * Wraps __{@link writeContract}__ with `abi` set to __{@link escrowSrcAbi}__ and `functionName` set to `"rescueFunds"`
+ */
+export const writeEscrowSrcRescueFunds = /*#__PURE__*/ createWriteContract({
+  abi: escrowSrcAbi,
+  address: escrowSrcAddress,
+  functionName: "rescueFunds",
+});
+
+/**
+ * Wraps __{@link writeContract}__ with `abi` set to __{@link escrowSrcAbi}__ and `functionName` set to `"withdraw"`
+ */
+export const writeEscrowSrcWithdraw = /*#__PURE__*/ createWriteContract({
+  abi: escrowSrcAbi,
+  address: escrowSrcAddress,
+  functionName: "withdraw",
+});
+
+/**
+ * Wraps __{@link simulateContract}__ with `abi` set to __{@link escrowSrcAbi}__
+ */
+export const simulateEscrowSrc = /*#__PURE__*/ createSimulateContract({
+  abi: escrowSrcAbi,
+  address: escrowSrcAddress,
+});
+
+/**
+ * Wraps __{@link simulateContract}__ with `abi` set to __{@link escrowSrcAbi}__ and `functionName` set to `"cancel"`
+ */
+export const simulateEscrowSrcCancel = /*#__PURE__*/ createSimulateContract({
+  abi: escrowSrcAbi,
+  address: escrowSrcAddress,
+  functionName: "cancel",
+});
+
+/**
+ * Wraps __{@link simulateContract}__ with `abi` set to __{@link escrowSrcAbi}__ and `functionName` set to `"publicWithdraw"`
+ */
+export const simulateEscrowSrcPublicWithdraw =
+  /*#__PURE__*/ createSimulateContract({
+    abi: escrowSrcAbi,
+    address: escrowSrcAddress,
+    functionName: "publicWithdraw",
+  });
+
+/**
+ * Wraps __{@link simulateContract}__ with `abi` set to __{@link escrowSrcAbi}__ and `functionName` set to `"rescueFunds"`
+ */
+export const simulateEscrowSrcRescueFunds =
+  /*#__PURE__*/ createSimulateContract({
+    abi: escrowSrcAbi,
+    address: escrowSrcAddress,
+    functionName: "rescueFunds",
+  });
+
+/**
+ * Wraps __{@link simulateContract}__ with `abi` set to __{@link escrowSrcAbi}__ and `functionName` set to `"withdraw"`
+ */
+export const simulateEscrowSrcWithdraw = /*#__PURE__*/ createSimulateContract({
+  abi: escrowSrcAbi,
+  address: escrowSrcAddress,
+  functionName: "withdraw",
+});
+
+/**
+ * Wraps __{@link watchContractEvent}__ with `abi` set to __{@link escrowSrcAbi}__
+ */
+export const watchEscrowSrcEvent = /*#__PURE__*/ createWatchContractEvent({
+  abi: escrowSrcAbi,
+  address: escrowSrcAddress,
+});
+
+/**
+ * Wraps __{@link watchContractEvent}__ with `abi` set to __{@link escrowSrcAbi}__ and `eventName` set to `"EscrowCancelled"`
+ */
+export const watchEscrowSrcEscrowCancelledEvent =
+  /*#__PURE__*/ createWatchContractEvent({
+    abi: escrowSrcAbi,
+    address: escrowSrcAddress,
+    eventName: "EscrowCancelled",
+  });
+
+/**
+ * Wraps __{@link watchContractEvent}__ with `abi` set to __{@link escrowSrcAbi}__ and `eventName` set to `"EscrowWithdrawal"`
+ */
+export const watchEscrowSrcEscrowWithdrawalEvent =
+  /*#__PURE__*/ createWatchContractEvent({
+    abi: escrowSrcAbi,
+    address: escrowSrcAddress,
+    eventName: "EscrowWithdrawal",
+  });
+
+/**
+ * Wraps __{@link watchContractEvent}__ with `abi` set to __{@link escrowSrcAbi}__ and `eventName` set to `"FundsRescued"`
+ */
+export const watchEscrowSrcFundsRescuedEvent =
+  /*#__PURE__*/ createWatchContractEvent({
+    abi: escrowSrcAbi,
+    address: escrowSrcAddress,
+    eventName: "FundsRescued",
   });

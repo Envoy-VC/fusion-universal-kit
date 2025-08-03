@@ -11,6 +11,7 @@ import type {
   CreateOrderArgs,
   DeployEvmEscrowArgs,
   FundBtcEscrowArgs,
+  WithdrawEvmEscrowArgs,
 } from "./types";
 
 export class FusionUniversalKit {
@@ -40,5 +41,9 @@ export class FusionUniversalKit {
 
   async claimBtcEscrow(args: CreateClaimTxArgs) {
     return await actions.claimBtcEscrow(args);
+  }
+
+  async withdrawEvmEscrow(args: WithdrawEvmEscrowArgs) {
+    return await actions.withdrawEvmEscrow(this.config, args, this.account);
   }
 }

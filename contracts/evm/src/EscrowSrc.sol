@@ -15,7 +15,7 @@ contract EscrowSrc is Escrow {
     using AddressLib for UniversalAddress;
     using TimelocksLib for Timelocks;
 
-    constructor(uint32 rescueDelay, IERC20 accessToken) BaseEscrow(rescueDelay, accessToken) {}
+    constructor(uint32 rescueDelay, IERC20 accessToken) payable BaseEscrow(rescueDelay, accessToken) {}
 
     // Allow contract to receive ETH
     receive() external payable {}

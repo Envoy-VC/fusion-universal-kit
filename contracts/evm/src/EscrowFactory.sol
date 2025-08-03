@@ -75,9 +75,7 @@ contract EscrowFactory is IEscrowFactory, Ownable {
      * @notice Creates source escrow for EVM→BTC swaps
      * @param immutables Escrow immutables including Bitcoin details
      */
-    function createSrcEscrow(IBaseEscrow.Immutables calldata immutables) external payable override {
-        // Note: Bitcoin validation handled at application level
-
+    function createSrcEscrow(IBaseEscrow.Immutables calldata immutables) external payable override returns (address) {
         address token = immutables.token;
 
         // Calculate required ETH
@@ -101,13 +99,15 @@ contract EscrowFactory is IEscrowFactory, Ownable {
         _collectFee();
 
         emit SrcEscrowCreated(escrow, immutables.hashlock, immutables.maker, msg.sender);
+
+        return escrow;
     }
 
     /**
      * @notice Creates destination escrow for BTC→EVM swaps
      * @param immutables Escrow immutables including Bitcoin details
      */
-    function createDstEscrow(IBaseEscrow.Immutables calldata immutables) external payable override {
+    function createDstEscrow(IBaseEscrow.Immutables calldata immutables) external payable override returns (address) {
         // Note: Bitcoin validation handled at application level
 
         address token = immutables.token;
@@ -133,6 +133,7 @@ contract EscrowFactory is IEscrowFactory, Ownable {
         _collectFee();
 
         emit DstEscrowCreated(escrow, immutables.hashlock, immutables.taker, msg.sender);
+        return escrow;
     }
 
     /**
